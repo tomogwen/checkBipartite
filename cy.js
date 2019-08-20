@@ -10,7 +10,7 @@ var cy = cytoscape({
             selector: 'node',
             style: {
                     'background-color': '#002b80',
-                    //'label': 'data(id)'
+                    'label': 'data(id)'
                   }
           },
   
@@ -125,59 +125,79 @@ function tryColour(initKey) {
     var col2 = [];
 
     col1.push(cy.collection());
-    col2.push(cy.collection());
-    
     col1[0] = col1[0].union(cy.nodes()[initKey]);
+    col1All = col1All.union(cy.nodes()[initKey]);
 
     var probNode;
     var bipartite = true;
     var count = 0;
     var nextSearch = 1;
-    
-    while((col1All.length + col2All.length < cy.nodes().length) && bipartite ) {
-        col1.push(cy.collection());
-        col2.push(cy.collection());
 
+    var cont = true;
+    var stopNext = false;
+
+    while( cont && bipartite ) {
+        console.log(count);
+        console.log(bipartite);
+        col2.push(cy.collection());
         for(var i = 0; i < col1[count].length; i++) {
+            console.log('started at');
+            console.log(col1[count][i].id());
             col1[count][i].neighbourhood().nodes().forEach( function(node) {
                 if(bipartite) {
                     if(col1All.contains(node)) {
                         bipartite = false;
                         brokenNode = col1[count][i];
                         brokenNodeN = node;
-                        nextSearch = 2;
+                        
+                        console.log('broken at');
+                        console.log(node.id());
+
                     } else if (!col2All.contains(node)) {
                         col2[count] = col2[count].union(node);
                         col2All = col2All.union(node);
+                        
+                        console.log('Added to col2');
+                        console.log(node.id());
                     }
                 }
             });
         }
         
+        col1.push(cy.collection());
         for(var i = 0; i < col2[count].length; i++) {
+            console.log('started at');
+            console.log(col2[count][i].id());
             col2[count][i].neighbourhood().nodes().forEach( function(node) {
                 if(bipartite) {
                     if(col2All.contains(node)) {
                         bipartite = false;
                         brokenNode = col2[count][i];
                         brokenNodeN = node;
-                        nextSearch = 1;
+
+                        console.log('broken at');
+                        console.log(node.id());
+                    
                     } else if (!col1All.contains(node)) {
                         col1[count+1] = col1[count+1].union(node);
                         col1All = col1All.union(node);
                         probNode = node;
+                        
+                        console.log('Added to col2');
+                        console.log(node.id());
                     }
                 }
             });
         }
-
         count += 1;
+        if(stopNext) { cont = false; }
+        if(col1All.length + col2All.length == cy.nodes().length) { stopNext = true; }
     }
 
     if(bipartite) {
         cy.style().selector(col1All).style('background-color', 'red').update();
         cy.style().selector(col2All).style('background-color', 'blue').update();
-    } else {
+    } else { 
         // find odd cycle..
         var cycleFound = false;
         
@@ -210,7 +230,7 @@ function tryColour(initKey) {
             cy.style().selector(cycle1[cycle1.length-1].neighbourhood().edges().intersect(cycle1[cycle1.length-2].neighbourhood().edges())).style('line-color', 'red').update();
             cy.style().selector(cycle2[cycle2.length-1].neighbourhood().edges().intersect(cycle2[cycle2.length-2].neighbourhood().edges())).style('line-color', 'red').update();
             counter += 1;
-            if(counter==3) { cycleFound = true;}
+            if(counter==15) { cycleFound = true;} 
         }
     }
 
