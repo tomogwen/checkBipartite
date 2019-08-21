@@ -3,7 +3,37 @@ var cy = cytoscape({
   container: document.getElementById('cy'), // container to render in
 
   elements: [ // list of graph elements to start with
-      
+      /*{ // node a
+              data: { id: '1' }
+        },
+        { // node b
+              data: { id: '2' }
+        },
+        { // node b
+              data: { id: '3' }
+        },
+        { // node b
+              data: { id: '4' }
+        },
+        { // node b
+              data: { id: '5' }
+        },
+
+        { // edge ab
+              data: { id: 'a1b', source: '5', target: '1' }
+        },
+        { // edge ab
+              data: { id: 'ab', source: '1', target: '2' }
+        },
+        { // edge ab
+              data: { id: 'a2b', source: '2', target: '3' }
+        },
+        { // edge ab
+              data: { id: 'a12b', source: '3', target: '4' }
+        },
+        { // edge ab
+              data: { id: 'a21321', source: '4', target: '5' }
+        }*/
     ],
   style: [ // the stylesheet for the graph
       {
@@ -132,7 +162,9 @@ function tryColour(initKey) {
     var bipartite = true;
     var count = 0;
     var nextSearch = 1;
-
+    
+    var prev = {};
+    var prevId = {};
     var cont = true;
     var stopNext = false;
 
@@ -149,16 +181,21 @@ function tryColour(initKey) {
                         brokenNode = col1[count][i];
                         brokenNodeN = node;
                         nextSearch = 2;
-
+                        
                         console.log('broken at');
                         console.log(node.id());
 
                     } else if (!col2All.contains(node)) {
                         col2[count] = col2[count].union(node);
                         col2All = col2All.union(node);
-                        
+
+                        prev[node.id()] = col1[count][i];
+                        prevId[node.id()] = col1[count][i].id();    
+
                         console.log('Added to col2');
                         console.log(node.id());
+                        console.log('with prev node');
+                        console.log(col1[count][i].id());
                     }
                 }
             });
@@ -184,8 +221,12 @@ function tryColour(initKey) {
                         col1All = col1All.union(node);
                         probNode = node;
                         
+                        prev[node.id()] = col2[count][i];
+                        prevId[node.id()] = col2[count][i].id();
                         console.log('Added to col2');
                         console.log(node.id());
+                        console.log('with prev node');
+                        console.log(col2[count][i].id());
                     }
                 }
             });
@@ -193,6 +234,7 @@ function tryColour(initKey) {
         count += 1;
         if(stopNext) { cont = false; }
         if(col1All.length + col2All.length == cy.nodes().length) { stopNext = true; }
+        if(count == 500 ) { alert('error'); cont = false;} 
     }
 
     if(bipartite) {
@@ -206,75 +248,49 @@ function tryColour(initKey) {
         var start2 = brokenNodeN;
         var cycle1 = [start1];
         var cycle2 = [start2];
-        var stop1  = false;
-        var stop2  = false;
+        // var stop1  = false;
+        // var stop2  = false;
         var counter = 0;
 
+
+        console.log('prev');
+        console.table(prevId);
         cy.style().selector(start1.neighbourhood().edges().intersect(start2.neighbourhood().edges())).style('line-color', 'red').update();
         console.log('broken edge coloured');
         console.log(start1.id());
         console.log(start2.id());
         
         while(!cycleFound) {
-            console.log(counter);
+
+            var next1 = prev[cycle1[cycle1.length-1].id()];
+            cycle1.push(next1);
             
-            // TO FIX - breaks if there are more than one potential cycles
-            if(nextSearch === 1) {
-                if(!stop1) {
-                    var next1 = cycle1[counter].neighbourhood().intersect(col1All);
-                    cycle1.push(next1);
-                }
-                if(!stop2) {
-                    var next2 = cycle2[counter].neighbourhood().intersect(col1All);
-                    cycle2.push(next2);
-                }
-                nextSearch = 2;
-            } else if(nextSearch === 2) {
-                if(!stop1) {
-                    var next1 = cycle1[counter].neighbourhood().intersect(col2All);
-                    cycle1.push(next1);
-                }
-                if(!stop2) {
-                    var next2 = cycle2[counter].neighbourhood().intersect(col2All);
-                    cycle2.push(next2);
-                }
-                nextSearch = 1;
-            }
+            var next2 = prev[cycle2[cycle2.length-1].id()];
+            cycle2.push(next2);
+    
+            console.log('next 1/2');
+            console.log(next1.id());
+            console.log(next2.id());
 
+            cy.style().selector(cycle1[cycle1.length-1].neighbourhood().edges().intersect(
+                cycle1[cycle1.length-2].neighbourhood().edges())).style('line-color', 'red').update();
+            console.log('coloured edge between');
+            console.log(cycle1[cycle1.length-1].id());
+            console.log(cycle1[cycle1.length-2].id());
 
-            if(!stop1) {
-                cy.style().selector(cycle1[cycle1.length-1].neighbourhood().edges().intersect(
-                    cycle1[cycle1.length-2].neighbourhood().edges())).style('line-color', 'red').update();
-                
-                console.log('coloured edge between');
-                console.log(cycle1[cycle1.length-1].id());
-                console.log(cycle1[cycle1.length-2].id());
+            cy.style().selector(cycle2[cycle2.length-1].neighbourhood().edges().intersect(
+                cycle2[cycle2.length-2].neighbourhood().edges())).style('line-color', 'red').update();
+            console.log('coloured edge between');
+            console.log(cycle2[cycle2.length-1].id());
+            console.log(cycle2[cycle2.length-2].id());
 
-                if(cycle1[counter+1] == cy.nodes()[initKey]) {
-                    stop1 = true;
-                }
-            
-            }
-            if(!stop2) {
-                cy.style().selector(cycle2[cycle2.length-1].neighbourhood().edges().intersect(
-                    cycle2[cycle2.length-2].neighbourhood().edges())).style('line-color', 'red').update();
-
-                console.log('coloured edge between');
-                console.log(cycle2[cycle2.length-1].id());
-                console.log(cycle2[cycle2.length-2].id());
-                
-                if(cycle2[counter+1] == cy.nodes()[initKey]) {
-                    stop2 = true;
-                }
-            }
-            
-            if(stop1 && stop2) {
+            if( next1 == next2 ) {
                 cycleFound = true;
             }
+            if(counter==15) { cycleFound = true;}
+            counter+=1;
 
-            counter += 1;
-            if(counter==15) { cycleFound = true;} 
-        }
+        } 
     }
 
     return bipartite; 
@@ -287,6 +303,8 @@ function checkBipartite() {
     key = Object.keys(cy.nodes())[0];
     //var container = cy.collection('nodes');
     //col1 = col1.union(nodes[key]);
+    
+    // tryColour ONLY WORKS ON CONNECTED GRAPHS
     var result = tryColour( key );    
     console.log(result);
 }
