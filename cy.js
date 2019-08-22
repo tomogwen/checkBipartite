@@ -121,7 +121,7 @@ function runCose() {
 }
 
 
-function binomial(n, k) {
+/*function binomial(n, k) {
     if ((typeof n !== 'number') || (typeof k !== 'number')) 
         return false; 
     
@@ -132,7 +132,7 @@ function binomial(n, k) {
         coeff /= x;
     
     return coeff;
-}
+}*/
 
 
 function randomEdges(numNodes) {
