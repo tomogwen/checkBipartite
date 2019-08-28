@@ -6,6 +6,7 @@ var col2All;
 
 function init() {
 
+    // initialise cytoscape
     cy = cytoscape({
 
       container: document.getElementById('cy'), // container to render in
@@ -111,6 +112,7 @@ function init() {
 
 
 function runCose() {
+    // runs COSE, an algo to make it look pretty
     var options = {
         name: 'cose',
         animate: 'true'
@@ -136,6 +138,8 @@ function runCose() {
 
 
 function randomEdges(numNodes) {
+    // adds random edges to available nodes
+    // please note, works sequentially, so breaks if non-sequential IDs
     for (var i = 0; i< Math.floor(1*(numNodes-1)); i++) {
         var startId = Math.floor(Math.random() * numNodes); 
         var endId = startId;
